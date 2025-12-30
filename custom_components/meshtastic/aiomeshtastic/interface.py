@@ -952,7 +952,7 @@ class MeshInterface:
     async def send_environment_telemetry(
         self,
         metrics: Mapping[str, Any],
-        node: int | MeshNode = BROADCAST_NUM,
+        node: int | MeshNode,
         timeout: float = UNDEFINED,  # noqa: ASYNC109
     ) -> Packet:
         telemetry = telemetry_pb2.Telemetry()
