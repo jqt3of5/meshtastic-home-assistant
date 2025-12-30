@@ -87,6 +87,13 @@ SERVICE_BASE_REQUEST_SCHEMA = vol.Schema(
     }
 )
 
+SERVICE_BASE_BROADCAST_SCHEMA = vol.Schema(
+    {
+        vol.Optional(ATTR_SERVICE_DATA_FROM): cv.string,
+        vol.Optional(ATTR_SERVICE_DATA_TO): cv.string,
+    }
+)
+
 SERVICE_REQUEST_TELEMETRY_SCHEMA = SERVICE_BASE_REQUEST_SCHEMA.extend(
     {
         vol.Required(ATTR_SERVICE_REQUEST_TELEMETRY_DATA_TYPE): SelectSelector(
@@ -98,7 +105,7 @@ SERVICE_REQUEST_TELEMETRY_SCHEMA = SERVICE_BASE_REQUEST_SCHEMA.extend(
 SERVICE_REQUEST_POSITION_SCHEMA = SERVICE_BASE_REQUEST_SCHEMA.extend({})
 SERVICE_REQUEST_TRACEROUTE_SCHEMA = SERVICE_BASE_REQUEST_SCHEMA.extend({})
 
-SERVICE_BROADCAST_ENVIRONMENT_TELEMETRY_SCHEMA = SERVICE_BASE_REQUEST_SCHEMA.extend(
+SERVICE_BROADCAST_ENVIRONMENT_TELEMETRY_SCHEMA = SERVICE_BASE_BROADCAST_SCHEMA.extend(
     {
         vol.Optional("temperature"): vol.Coerce(float),
         vol.Optional("relative_humidity"): vol.Coerce(float),
@@ -392,13 +399,13 @@ async def _setup_service_send_text_handler(
 async def _setup_service_broadcast_environment_telemetry_handler(
     hass: HomeAssistant, entry: MeshtasticConfigEntry, client: MeshtasticApiClient
 ) -> None:
-    async def handler(call: ServiceCall, _: int | None) -> None:
+    async def handler(call: ServiceCall, to: int, _: int | None) -> None:
         metrics = {
             key: value
             for key, value in call.data.items()
             if key not in (ATTR_SERVICE_DATA_FROM, ATTR_SERVICE_DATA_TO)
         }
-        await client.send_environment_telemetry(BROADCAST_NUM, metrics)
+        await client.send_environment_telemetry(to, metrics)
 
     _service_handlers[entry.entry_id][SERVICE_BROADCAST_ENVIRONMENT_TELEMETRY] = await _build_default_handler(
         hass, client, handler

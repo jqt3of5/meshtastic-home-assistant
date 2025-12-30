@@ -149,7 +149,7 @@ broadcast_environment_telemetry:
             device_class:
               - gateway
     to:
-      required: true
+      required: false
       selector:
         device:
           integration: meshtastic
