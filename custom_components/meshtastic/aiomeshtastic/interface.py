@@ -10,6 +10,7 @@ import enum
 import functools
 import itertools
 import random
+import time
 from collections import defaultdict, deque
 from collections.abc import AsyncIterator, Awaitable, Callable, Mapping, MutableMapping
 from dataclasses import dataclass
@@ -958,6 +959,7 @@ class MeshInterface:
         telemetry = telemetry_pb2.Telemetry()
         for key, value in metrics.items():
             setattr(telemetry.environment_metrics, key, value)
+        telemetry.time = int(time.time())
 
         return await self._send_message_await_response(
             node=node.id if isinstance(node, MeshNode) else node,
