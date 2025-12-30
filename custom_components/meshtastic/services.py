@@ -46,6 +46,7 @@ from .const import (
     SERVICE_REQUEST_POSITION,
     SERVICE_REQUEST_TELEMETRY,
     SERVICE_REQUEST_TRACEROUTE,
+    SERVICE_BROADCAST_ENVIRONMENT_TELEMETRY,
     SERVICE_SEND_DIRECT_MESSAGE,
     SERVICE_SEND_TEXT,
     STATE_ATTRIBUTE_CHANNEL_INDEX,
@@ -97,6 +98,29 @@ SERVICE_REQUEST_TELEMETRY_SCHEMA = SERVICE_BASE_REQUEST_SCHEMA.extend(
 SERVICE_REQUEST_POSITION_SCHEMA = SERVICE_BASE_REQUEST_SCHEMA.extend({})
 SERVICE_REQUEST_TRACEROUTE_SCHEMA = SERVICE_BASE_REQUEST_SCHEMA.extend({})
 
+SERVICE_BROADCAST_ENVIRONMENT_TELEMETRY_SCHEMA = SERVICE_BASE_REQUEST_SCHEMA.extend(
+    {
+        vol.Optional("temperature"): vol.Coerce(float),
+        vol.Optional("relative_humidity"): vol.Coerce(float),
+        vol.Optional("barometric_pressure"): vol.Coerce(float),
+        vol.Optional("gas_resistance"): vol.Coerce(float),
+        vol.Optional("voltage"): vol.Coerce(float),
+        vol.Optional("current"): vol.Coerce(float),
+        vol.Optional("iaq"): vol.Coerce(int),
+        vol.Optional("distance"): vol.Coerce(float),
+        vol.Optional("lux"): vol.Coerce(float),
+        vol.Optional("white_lux"): vol.Coerce(float),
+        vol.Optional("ir_lux"): vol.Coerce(float),
+        vol.Optional("uv_lux"): vol.Coerce(float),
+        vol.Optional("wind_direction"): vol.Coerce(int),
+        vol.Optional("wind_speed"): vol.Coerce(float),
+        vol.Optional("weight"): vol.Coerce(float),
+        vol.Optional("wind_gust"): vol.Coerce(float),
+        vol.Optional("wind_lull"): vol.Coerce(float),
+        vol.Optional("radiation"): vol.Coerce(float),
+    }
+)
+
 _SERVICE_CANT_HANDLE_RESPONSE = object()
 _service_handlers: dict[str, dict[str, Callable[[ServiceCall], Awaitable[ServiceResponse]]]] = defaultdict(dict)
 
@@ -107,6 +131,7 @@ SUPPORTED_SERVICES = {
     SERVICE_REQUEST_TELEMETRY: SupportsResponse.OPTIONAL,
     SERVICE_REQUEST_POSITION: SupportsResponse.OPTIONAL,
     SERVICE_REQUEST_TRACEROUTE: SupportsResponse.OPTIONAL,
+    SERVICE_BROADCAST_ENVIRONMENT_TELEMETRY: SupportsResponse.OPTIONAL,
 }
 
 SERVICE_TO_SCHEMA = {
@@ -116,6 +141,7 @@ SERVICE_TO_SCHEMA = {
     SERVICE_REQUEST_TELEMETRY: SERVICE_REQUEST_TELEMETRY_SCHEMA,
     SERVICE_REQUEST_POSITION: SERVICE_REQUEST_POSITION_SCHEMA,
     SERVICE_REQUEST_TRACEROUTE: SERVICE_REQUEST_TRACEROUTE_SCHEMA,
+    SERVICE_BROADCAST_ENVIRONMENT_TELEMETRY: SERVICE_BROADCAST_ENVIRONMENT_TELEMETRY_SCHEMA,
 }
 
 
@@ -163,6 +189,7 @@ async def async_register_gateway(hass: HomeAssistant, entry: MeshtasticConfigEnt
     await _setup_service_request_telemetry_handler(hass, entry, client)
     await _setup_service_request_position_handler(hass, entry, client)
     await _setup_service_request_traceroute_handler(hass, entry, client)
+    await _setup_service_broadcast_environment_telemetry_handler(hass, entry, client)
 
 
 async def async_unregister_gateway(hass: HomeAssistant, entry: MeshtasticConfigEntry) -> None:
@@ -360,3 +387,19 @@ async def _setup_service_send_text_handler(
         )
 
     _service_handlers[entry.entry_id][SERVICE_SEND_TEXT] = await _build_default_handler(hass, client, handler)
+
+
+async def _setup_service_broadcast_environment_telemetry_handler(
+    hass: HomeAssistant, entry: MeshtasticConfigEntry, client: MeshtasticApiClient
+) -> None:
+    async def handler(call: ServiceCall, _: int | None) -> None:
+        metrics = {
+            key: value
+            for key, value in call.data.items()
+            if key not in (ATTR_SERVICE_DATA_FROM, ATTR_SERVICE_DATA_TO)
+        }
+        await client.send_environment_telemetry(BROADCAST_NUM, metrics)
+
+    _service_handlers[entry.entry_id][SERVICE_BROADCAST_ENVIRONMENT_TELEMETRY] = await _build_default_handler(
+        hass, client, handler
+    )

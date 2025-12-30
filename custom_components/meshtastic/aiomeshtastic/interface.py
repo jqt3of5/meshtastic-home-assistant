@@ -949,6 +949,24 @@ class MeshInterface:
         )
         return response.app_payload
 
+    async def send_environment_telemetry(
+        self,
+        metrics: Mapping[str, Any],
+        node: int | MeshNode = BROADCAST_NUM,
+        timeout: float = UNDEFINED,  # noqa: ASYNC109
+    ) -> Packet:
+        telemetry = telemetry_pb2.Telemetry()
+        for key, value in metrics.items():
+            setattr(telemetry.environment_metrics, key, value)
+
+        return await self._send_message_await_response(
+            node=node.id if isinstance(node, MeshNode) else node,
+            message=telemetry,
+            port_num=portnums_pb2.PortNum.TELEMETRY_APP,
+            want_response=False,
+            timeout=timeout,
+        )
+
     async def _send_message_await_response(  # noqa: PLR0913
         self,
         node: int,

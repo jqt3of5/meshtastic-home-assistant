@@ -136,3 +136,124 @@ request_traceroute:
       selector:
         device:
           integration: meshtastic
+
+broadcast_environment_telemetry:
+  fields:
+    from:
+      selector:
+        device:
+          filter:
+            integration: meshtastic
+          entity:
+            domain: meshtastic
+            device_class:
+              - gateway
+    to:
+      required: true
+      selector:
+        device:
+          integration: meshtastic
+    temperature:
+      selector:
+        number:
+          mode: box
+          unit_of_measurement: "°C"
+          step: 0.01
+    relative_humidity:
+      selector:
+        number:
+          mode: box
+          unit_of_measurement: "%"
+          step: 0.01
+    barometric_pressure:
+      selector:
+        number:
+          mode: box
+          unit_of_measurement: "hPa"
+          step: 0.01
+    gas_resistance:
+      selector:
+        number:
+          mode: box
+          unit_of_measurement: "MΩ"
+          step: 0.01
+    voltage:
+      selector:
+        number:
+          mode: box
+          unit_of_measurement: "V"
+          step: 0.01
+    current:
+      selector:
+        number:
+          mode: box
+          unit_of_measurement: "mA"
+          step: 0.01
+    iaq:
+      selector:
+        number:
+          mode: box
+          step: 1
+    distance:
+      selector:
+        number:
+          mode: box
+          unit_of_measurement: "mm"
+          step: 1
+    lux:
+      selector:
+        number:
+          mode: box
+          unit_of_measurement: "lx"
+          step: 1
+    white_lux:
+      selector:
+        number:
+          mode: box
+          step: 1
+    ir_lux:
+      selector:
+        number:
+          mode: box
+          step: 1
+    uv_lux:
+      selector:
+        number:
+          mode: box
+          step: 1
+    wind_direction:
+      selector:
+        number:
+          mode: box
+          unit_of_measurement: "°"
+          step: 1
+    wind_speed:
+      selector:
+        number:
+          mode: box
+          unit_of_measurement: "m/s"
+          step: 0.01
+    weight:
+      selector:
+        number:
+          mode: box
+          unit_of_measurement: "kg"
+          step: 0.01
+    wind_gust:
+      selector:
+        number:
+          mode: box
+          unit_of_measurement: "m/s"
+          step: 0.01
+    wind_lull:
+      selector:
+        number:
+          mode: box
+          unit_of_measurement: "m/s"
+          step: 0.01
+    radiation:
+      selector:
+        number:
+          mode: box
+          unit_of_measurement: "µR/h"
+          step: 0.01

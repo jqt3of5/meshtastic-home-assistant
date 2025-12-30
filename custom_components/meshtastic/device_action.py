@@ -24,6 +24,7 @@ from .const import (
     DOMAIN,
     SERVICE_REQUEST_POSITION,
     SERVICE_REQUEST_TELEMETRY,
+    SERVICE_BROADCAST_ENVIRONMENT_TELEMETRY,
     SERVICE_SEND_DIRECT_MESSAGE,
 )
 
@@ -33,8 +34,14 @@ if TYPE_CHECKING:
 ACTION_TYPE_SEND_MESSAGE = "send_message"
 ACTION_TYPE_REQUEST_TELEMETRY = "request_telemetry"
 ACTION_TYPE_REQUEST_POSITION = "request_position"
+ACTION_TYPE_BROADCAST_ENVIRONMENT_TELEMETRY = "broadcast_environment_telemetry"
 
-MESSAGE_ACTION_TYPES = {ACTION_TYPE_SEND_MESSAGE, ACTION_TYPE_REQUEST_TELEMETRY, ACTION_TYPE_REQUEST_POSITION}
+MESSAGE_ACTION_TYPES = {
+    ACTION_TYPE_SEND_MESSAGE,
+    ACTION_TYPE_REQUEST_TELEMETRY,
+    ACTION_TYPE_REQUEST_POSITION,
+    ACTION_TYPE_BROADCAST_ENVIRONMENT_TELEMETRY,
+}
 
 ACTION_SEND_MESSAGE_ATTR_MESSAGE = "message"
 ACTION_REQUEST_TELEMETRY_ATTR_TELEMETRY_TYPE = "telemetry_type"
@@ -59,11 +66,34 @@ MESSAGE_ACTION_SCHEMA_REQUEST_TELEMETRY_EXTRA = vol.Schema(
 MESSAGE_ACTION_SCHEMA_REQUEST_TELEMETRY = MESSAGE_ACTION_BASE_SCHEMA.extend(
     MESSAGE_ACTION_SCHEMA_REQUEST_TELEMETRY_EXTRA.schema
 )
+MESSAGE_ACTION_SET_TELEMETRY = MESSAGE_ACTION_BASE_SCHEMA.extend(
+        {
+            vol.Optional("temperature"): vol.Coerce(float),
+            vol.Optional("relative_humidity"): vol.Coerce(float),
+            vol.Optional("barometric_pressure"): vol.Coerce(float),
+            vol.Optional("gas_resistance"): vol.Coerce(float),
+            vol.Optional("voltage"): vol.Coerce(float),
+            vol.Optional("current"): vol.Coerce(float),
+            vol.Optional("iaq"): vol.Coerce(int),
+            vol.Optional("distance"): vol.Coerce(float),
+            vol.Optional("lux"): vol.Coerce(float),
+            vol.Optional("white_lux"): vol.Coerce(float),
+            vol.Optional("ir_lux"): vol.Coerce(float),
+            vol.Optional("uv_lux"): vol.Coerce(float),
+            vol.Optional("wind_direction"): vol.Coerce(int),
+            vol.Optional("wind_speed"): vol.Coerce(float),
+            vol.Optional("weight"): vol.Coerce(float),
+            vol.Optional("wind_gust"): vol.Coerce(float),
+            vol.Optional("wind_lull"): vol.Coerce(float),
+            vol.Optional("radiation"): vol.Coerce(float),
+        })
 
 _ACTION_SCHEMA = vol.Any(
-    MESSAGE_ACTION_BASE_SCHEMA, MESSAGE_ACTION_SCHEMA_SEND_MESSAGE, MESSAGE_ACTION_SCHEMA_REQUEST_TELEMETRY
+    MESSAGE_ACTION_BASE_SCHEMA,
+    MESSAGE_ACTION_SCHEMA_SEND_MESSAGE,
+    MESSAGE_ACTION_SCHEMA_REQUEST_TELEMETRY,
+    MESSAGE_ACTION_SET_TELEMETRY
 )
-
 
 async def async_validate_action_config(hass: HomeAssistant, config: ConfigType) -> ConfigType:
     config = async_validate_entity_schema(hass, config, _ACTION_SCHEMA)
@@ -84,6 +114,7 @@ async def async_get_actions(hass: HomeAssistant, device_id: str) -> list[dict]: 
         {CONF_DEVICE_ID: device_id, CONF_DOMAIN: DOMAIN, CONF_TYPE: ACTION_TYPE_SEND_MESSAGE},
         {CONF_DEVICE_ID: device_id, CONF_DOMAIN: DOMAIN, CONF_TYPE: ACTION_TYPE_REQUEST_TELEMETRY},
         {CONF_DEVICE_ID: device_id, CONF_DOMAIN: DOMAIN, CONF_TYPE: ACTION_TYPE_REQUEST_POSITION},
+        {CONF_DEVICE_ID: device_id, CONF_DOMAIN: DOMAIN, CONF_TYPE: ACTION_TYPE_BROADCAST_ENVIRONMENT_TELEMETRY},
     ]
 
 
@@ -125,6 +156,17 @@ async def async_call_action_from_config(
     elif config[CONF_TYPE] == ACTION_TYPE_REQUEST_POSITION:
         service_data = {ATTR_SERVICE_DATA_TO: config[CONF_DEVICE_ID]}
         await hass.services.async_call(DOMAIN, SERVICE_REQUEST_POSITION, service_data, blocking=True, context=context)
+    elif config[CONF_TYPE] == ACTION_TYPE_BROADCAST_ENVIRONMENT_TELEMETRY:
+        service_data = {
+            **{
+                key: value
+                for key, value in config.items()
+                if key not in (CONF_DEVICE_ID, CONF_DOMAIN, CONF_TYPE)
+            },
+        }
+        await hass.services.async_call(
+            DOMAIN, SERVICE_BROADCAST_ENVIRONMENT_TELEMETRY, service_data, blocking=True, context=context
+        )
 
 
 async def async_get_action_capabilities(hass: HomeAssistant, config: ConfigType) -> dict[str, vol.Schema]:  # noqa: ARG001
@@ -136,6 +178,27 @@ async def async_get_action_capabilities(hass: HomeAssistant, config: ConfigType)
         fields[vol.Required(ACTION_SEND_MESSAGE_ATTR_MESSAGE)] = cv.string  # template is not rendered
     elif action_type == ACTION_TYPE_REQUEST_TELEMETRY:
         fields[vol.Required(ACTION_REQUEST_TELEMETRY_ATTR_TELEMETRY_TYPE)] = TELEMETRY_TYPE_SELECTOR
+    elif action_type == ACTION_TYPE_BROADCAST_ENVIRONMENT_TELEMETRY:
+        fields = {
+            vol.Optional("temperature"): vol.Coerce(float),
+            vol.Optional("relative_humidity"): vol.Coerce(float),
+            vol.Optional("barometric_pressure"): vol.Coerce(float),
+            vol.Optional("gas_resistance"): vol.Coerce(float),
+            vol.Optional("voltage"): vol.Coerce(float),
+            vol.Optional("current"): vol.Coerce(float),
+            vol.Optional("iaq"): vol.Coerce(int),
+            vol.Optional("distance"): vol.Coerce(float),
+            vol.Optional("lux"): vol.Coerce(float),
+            vol.Optional("white_lux"): vol.Coerce(float),
+            vol.Optional("ir_lux"): vol.Coerce(float),
+            vol.Optional("uv_lux"): vol.Coerce(float),
+            vol.Optional("wind_direction"): vol.Coerce(int),
+            vol.Optional("wind_speed"): vol.Coerce(float),
+            vol.Optional("weight"): vol.Coerce(float),
+            vol.Optional("wind_gust"): vol.Coerce(float),
+            vol.Optional("wind_lull"): vol.Coerce(float),
+            vol.Optional("radiation"): vol.Coerce(float),
+        }
     else:
         return {}
 

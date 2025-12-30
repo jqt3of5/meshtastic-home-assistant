@@ -60,6 +60,7 @@ SERVICE_BROADCAST_CHANNEL_MESSAGE = "broadcast_channel_message"
 SERVICE_REQUEST_TELEMETRY = "request_telemetry"
 SERVICE_REQUEST_POSITION = "request_position"
 SERVICE_REQUEST_TRACEROUTE = "request_traceroute"
+SERVICE_BROADCAST_ENVIRONMENT_TELEMETRY = "broadcast_environment_telemetry"
 
 ATTR_SERVICE_DATA_TO = "to"
 ATTR_SERVICE_DATA_CHANNEL = "channel"

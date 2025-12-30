@@ -360,6 +360,13 @@ class MeshtasticApiClient:
         except MeshtasticError as e:
             raise MeshtasticApiClientError(str(e)) from e
 
+    async def send_environment_telemetry(self, node: int, metrics: Mapping[str, Any]) -> Mapping[str, Any]:
+        try:
+            response = await self._interface.send_environment_telemetry(node, metrics=metrics)
+            return self._message_to_dict(response.app_payload)
+        except MeshtasticError as e:
+            raise MeshtasticApiClientError(str(e)) from e
+
     async def request_position(self, node: int) -> Mapping[str, Any]:
         try:
             response = await self._interface.request_position(node)
